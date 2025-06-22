@@ -1,18 +1,44 @@
 import { useState, useEffect } from "react";
 import groomAndBrideImg from "./assets/images/groomandbride.jpg";
 import invitationImg from "./assets/images/invitation.jpg";
+import boatImg from "./assets/images/boat.jpg";
+import homeImg from "./assets/images/home.jpg";
+import churchImg from "./assets/images/church.jpg";
 
 function App() {
   const [isVisible, setIsVisible] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const [showDeveloperPage, setShowDeveloperPage] = useState(false);
+  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  const [currentStorySlide, setCurrentStorySlide] = useState(0);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   });
+
+  const heroImages = [groomAndBrideImg, boatImg];
+  const galleryImages = [invitationImg, groomAndBrideImg, homeImg, churchImg, boatImg];
+  const storyCards = [
+    {
+      title: "Our Journey Together",
+      content: "\"And as for the matter which you and I have spoken of, indeed the Lord be between you and me forever.\" (1 Sam 20:23)",
+      image: groomAndBrideImg
+    },
+    {
+      title: "A Beautiful Beginning",
+      content: "The family of Rev. Dr. MUTAGANDA Marcel and HAFASHIMANA Vincent have great pleasure to invite you to the wedding ceremony of their children.",
+      image: invitationImg
+    },
+    {
+      title: "Forever Together",
+      content: "With hearts full of joy and gratitude, we invite you to witness the union of Céline and Derrick as they begin their journey as husband and wife.",
+      image: homeImg
+    }
+  ];
 
   useEffect(() => {
     setIsVisible(true);
@@ -44,6 +70,10 @@ function App() {
       if (isCreditsModalOpen && !event.target.closest(".modal-content")) {
         setIsCreditsModalOpen(false);
       }
+      // Close gallery modal if clicking on backdrop
+      if (selectedGalleryImage && event.target.classList.contains("gallery-modal-backdrop")) {
+        setSelectedGalleryImage(null);
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
@@ -66,6 +96,55 @@ function App() {
       document.body.classList.remove("modal-open");
     };
   }, [isCreditsModalOpen]);
+
+  // Hero image auto-slide
+  useEffect(() => {
+    const slideInterval = setInterval(() => {
+      setCurrentHeroSlide((prev) => (prev + 1) % heroImages.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(slideInterval);
+  }, [heroImages.length]);
+
+
+
+  // Story cards auto-slide
+  useEffect(() => {
+    const slideInterval = setInterval(() => {
+      setCurrentStorySlide((prev) => (prev + 1) % storyCards.length);
+    }, 6000); // Change slide every 6 seconds
+
+    return () => clearInterval(slideInterval);
+  }, [storyCards.length]);
+
+  // Keyboard support for gallery modal
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (selectedGalleryImage) {
+        if (event.key === "Escape") {
+          setSelectedGalleryImage(null);
+        } else if (event.key === "ArrowLeft") {
+          setSelectedGalleryImage({
+            img: galleryImages[selectedGalleryImage.index === 0 ? galleryImages.length - 1 : selectedGalleryImage.index - 1],
+            index: selectedGalleryImage.index === 0 ? galleryImages.length - 1 : selectedGalleryImage.index - 1
+          });
+        } else if (event.key === "ArrowRight") {
+          setSelectedGalleryImage({
+            img: galleryImages[(selectedGalleryImage.index + 1) % galleryImages.length],
+            index: (selectedGalleryImage.index + 1) % galleryImages.length
+          });
+        }
+      }
+    };
+
+    if (selectedGalleryImage) {
+      document.addEventListener("keydown", handleKeyPress);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [selectedGalleryImage, galleryImages]);
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
@@ -360,10 +439,34 @@ function App() {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-rose-100 via-pink-50 to-purple-100"></div>
         <div className="absolute inset-0 bg-black/60"></div>
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-90"
-          style={{ backgroundImage: `url(${groomAndBrideImg})` }}
-        ></div>
+        
+        {/* Sliding Background Images */}
+        <div className="absolute inset-0">
+          {heroImages.map((img, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+                index === currentHeroSlide ? 'opacity-90' : 'opacity-0'
+              }`}
+              style={{ backgroundImage: `url(${img})` }}
+            ></div>
+          ))}
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+          {heroImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentHeroSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentHeroSlide 
+                  ? 'bg-white scale-125' 
+                  : 'bg-white/50 hover:bg-white/75'
+              }`}
+            />
+          ))}
+        </div>
 
         <div
           className={`relative z-10 text-center text-white px-4 ${
@@ -508,41 +611,103 @@ function App() {
             <h2 className="text-4xl md:text-5xl font-serif text-gray-800 mb-4 animate-fadeInUp">
               Our Love Story
             </h2>
-            <div className="w-24 h-1 bg-rose-600 mx-auto"></div>
+            <div className="w-24 h-1 bg-rose-600 mx-auto mb-8"></div>
+            <p className="text-gray-600 text-lg animate-fadeInUp animate-delay-200">
+              The beautiful chapters of our journey together
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="animate-fadeInLeft">
-              <h3 className="text-2xl font-serif text-gray-800 mb-6">
-                Our Journey Together
-              </h3>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                "And as for the matter which you and I have spoken of, indeed
-                the Lord be between you and me forever." (1 Sam 20:23)
-              </p>
-              <p className="text-gray-600 leading-relaxed mb-6">
-                The family of Rev. Dr. MUTAGANDA Marcel and HAFASHIMANA Vincent
-                have great pleasure to invite you to the wedding ceremony of
-                their children.
-              </p>
-              <p className="text-gray-600 leading-relaxed">
-                With hearts full of joy and gratitude, we invite you to witness
-                the union of Céline and Derrick as they begin their journey as
-                husband and wife.
-              </p>
+          {/* Sliding Story Cards */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="overflow-hidden">
+              <div 
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${currentStorySlide * 100}%)` }}
+              >
+                {storyCards.map((card, index) => (
+                  <div key={index} className="w-full flex-shrink-0 px-4">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                      <div className="animate-fadeInLeft">
+                        <h3 className="text-2xl font-serif text-gray-800 mb-6">
+                          {card.title}
+                        </h3>
+                        <p className="text-gray-600 leading-relaxed text-lg">
+                          {card.content}
+                        </p>
+                        
+                        {/* Story progress indicator */}
+                        <div className="mt-8 flex items-center space-x-2">
+                          <span className="text-sm text-gray-500">
+                            Chapter {index + 1} of {storyCards.length}
+                          </span>
+                          <div className="flex space-x-1">
+                            {storyCards.map((_, i) => (
+                              <div
+                                key={i}
+                                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                  i === currentStorySlide ? 'bg-rose-600' : 'bg-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="animate-fadeInRight">
+                        <div className="relative">
+                          <img
+                            src={card.image}
+                            alt={card.title}
+                            className="rounded-lg shadow-2xl w-full h-96 object-cover transform hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-rose-600 rounded-full flex items-center justify-center text-white text-2xl animate-float">
+                            💕
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="animate-fadeInRight">
-              <div className="relative">
-                <img
-                  src={groomAndBrideImg}
-                  alt="Céline and Derrick"
-                  className="rounded-lg shadow-2xl w-full h-96 object-cover transform hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-rose-600 rounded-full flex items-center justify-center text-white text-2xl animate-float">
-                  💕
-                </div>
+            {/* Story Navigation */}
+            <div className="flex justify-center mt-8 space-x-4">
+              <button
+                onClick={() => setCurrentStorySlide((prev) => 
+                  prev === 0 ? storyCards.length - 1 : prev - 1
+                )}
+                className="bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <div className="flex items-center space-x-2">
+                {storyCards.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentStorySlide(index)}
+                    className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                      index === currentStorySlide 
+                        ? 'bg-rose-600 scale-125' 
+                        : 'bg-white/60 hover:bg-white/80'
+                    }`}
+                  />
+                ))}
               </div>
+              
+              <button
+                onClick={() => setCurrentStorySlide((prev) => 
+                  (prev + 1) % storyCards.length
+                )}
+                className="bg-white/80 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -709,27 +874,133 @@ function App() {
             <h2 className="text-4xl md:text-5xl font-serif text-gray-800 mb-4 animate-fadeInUp">
               Gallery
             </h2>
-            <div className="w-24 h-1 bg-rose-600 mx-auto"></div>
+            <div className="w-24 h-1 bg-rose-600 mx-auto mb-8"></div>
+            <p className="text-gray-600 text-lg animate-fadeInUp animate-delay-200">
+              Capturing beautiful moments of our journey
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="animate-fadeInLeft">
-              <img
-                src={invitationImg}
-                alt="Wedding Invitation"
-                className="rounded-lg shadow-2xl w-full h-80 object-cover transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="animate-fadeInRight">
-              <img
-                src={groomAndBrideImg}
-                alt="Engagement Photo"
-                className="rounded-lg shadow-2xl w-full h-80 object-cover transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
+          {/* Gallery Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {galleryImages.map((img, index) => (
+              <div
+                key={index}
+                className="group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer overflow-hidden animate-fadeInUp"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => setSelectedGalleryImage({ img, index })}
+              >
+                <div className="aspect-w-4 aspect-h-3 overflow-hidden">
+                  <img
+                    src={img}
+                    alt={`Gallery image ${index + 1}`}
+                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+                
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-50 group-hover:scale-100">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-lg">
+                      <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Footer */}
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                    {index === 0 && "Wedding Invitation"}
+                    {index === 1 && "Céline & Derrick"}
+                    {index === 2 && "Beautiful Moments"}
+                    {index === 3 && "Sacred Place"}
+                    {index === 4 && "Journey Together"}
+                  </h3>
+                  <p className="text-gray-600 text-sm">Click to view full image</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
+
+      {/* Gallery Modal */}
+      {selectedGalleryImage && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 gallery-modal-backdrop">
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedGalleryImage(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Image Container */}
+            <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+              <img
+                src={selectedGalleryImage.img}
+                alt={`Gallery image ${selectedGalleryImage.index + 1}`}
+                className="w-full h-auto max-h-[70vh] object-contain"
+              />
+              
+              {/* Image Info */}
+              <div className="p-6">
+                <h3 className="text-2xl font-serif text-gray-800 mb-2">
+                  {selectedGalleryImage.index === 0 && "Wedding Invitation"}
+                  {selectedGalleryImage.index === 1 && "Céline & Derrick"}
+                  {selectedGalleryImage.index === 2 && "Beautiful Moments"}
+                  {selectedGalleryImage.index === 3 && "Sacred Place"}
+                  {selectedGalleryImage.index === 4 && "Journey Together"}
+                </h3>
+                <p className="text-gray-600">
+                  {selectedGalleryImage.index === 0 && "Our beautiful wedding invitation design"}
+                  {selectedGalleryImage.index === 1 && "A precious moment captured together"}
+                  {selectedGalleryImage.index === 2 && "Celebrating our love and happiness"}
+                  {selectedGalleryImage.index === 3 && "Where our hearts found their home"}
+                  {selectedGalleryImage.index === 4 && "Every step of our journey together"}
+                </p>
+                
+                {/* Navigation in Modal */}
+                <div className="flex justify-between items-center mt-4">
+                  <button
+                    onClick={() => setSelectedGalleryImage({
+                      img: galleryImages[selectedGalleryImage.index === 0 ? galleryImages.length - 1 : selectedGalleryImage.index - 1],
+                      index: selectedGalleryImage.index === 0 ? galleryImages.length - 1 : selectedGalleryImage.index - 1
+                    })}
+                    className="flex items-center space-x-2 text-gray-600 hover:text-rose-600 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Previous</span>
+                  </button>
+                  
+                  <span className="text-gray-500 text-sm">
+                    {selectedGalleryImage.index + 1} of {galleryImages.length}
+                  </span>
+                  
+                  <button
+                    onClick={() => setSelectedGalleryImage({
+                      img: galleryImages[(selectedGalleryImage.index + 1) % galleryImages.length],
+                      index: (selectedGalleryImage.index + 1) % galleryImages.length
+                    })}
+                    className="flex items-center space-x-2 text-gray-600 hover:text-rose-600 transition-colors"
+                  >
+                    <span>Next</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contact Section */}
       <section
